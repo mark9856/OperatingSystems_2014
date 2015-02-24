@@ -1,0 +1,163 @@
+[10/02/2014]
+
+Homework #1 grading criteria has been posted
+-- Nidhi and Boliang are starting to grade
+
+====================================================
+
+Homework #2
+
+Find teammates for OpSys Homework #2 on
+ Facebook Computer Science page
+
+Each time a process re-enters the ready queue,
+ it will have a new random number generated for
+  its CPU burst time
+
+Multiple CPUs
+-- each CPU will have the same scheduling algorithm
+
+use http://www.cs.rpi.edu/~goldsd/docs/fall2014-csci4210/01-multi-processor.jpg
+
+
+If a process completes its time slice with a CPU
+ and there are no other processes on the ready
+  queue, is there a context switch?
+
+  -- yes, always a context switch
+
+====================================================
+
+Midterm exam in one week away
+-- in class (so 1 hour and 45 minutes)
+-- four equally weighted problems with multiple parts
+   (for CSCI-6140 students, extra part(s) for question(s)?)
+-- one 8.5"x11" double-side crib sheet allowed
+    (or two single-sided sheets)
+
+Exam coverage:
+-- two-and-a-half problems focus on C/Linux systems
+    programming
+-- one-and-a-half problems focus on short term
+    CPU scheduling (algorithms)
+
+Types of questions:
+-- What is the EXACT output of the given code
+    (describe all possible outcomes using a diagram)
+     ...includes stdout, stderr, file output
+-- What happen(s) when line(s) are commented out
+    or added...?
+-- What is the turnaround and wait times for the
+    given processes based on specific scheduling
+     algorithms?
+-- Show that scheduling algorithm x is better than y
+
+Sample exam questions are posted
+
+====================================
+
+THREADS
+
+The mechanism for creating a process (i.e. fork()/exec())
+ is inefficient; why copy entire process memory space to
+  a new process just to have it overwritten by exec()?
+
+Threads allow us to write apps that use system resources
+ more efficiently and take advantage of multiple processors
+
+POSIX threads (Pthreads)
+-- standard for multi-threaded model used/supported
+    on *nix systems
+-- set of APIs
+-- Windows has support for multiple threads, but not Pthreads
+
+Why "thread" term is used?
+-- continuous
+-- sequence
+
+A process can be thought of as a "main thread" running with
+ an address space, file descriptors, instructions to execute,
+  data to process (stack/heap), etc.
+
+A multi-threaded process has a "main thread" and other
+ "threads of execution" that share the encompassing process's
+  address space, file descriptors, instructions to execute,
+   data to process (stack/heap), etc.
+
+Asynchronicity implies multiple operations that can be
+ executed independently of one another
+  (and are therefore parallelizable)
+
+Concurrency
+-- concurrent operations may be arbitrarily interleaved
+    such that they make progress independently, but not
+     necessarily simultaneously
+
+Challenges of asynchronicity
+-- synchronization
+    (when needed, e.g. combining intermediate results together,
+      sharing a common resource, etc.)
+
+Thread-safe
+-- code can be called from multiple threads in a single process
+    without synchronization or other problems occurring
+
+Re-entrant functions
+-- e.g. strtok(), readdir()
+-- might use a static variable within the function
+
+Requirements of concurrent systems:
+-- Execution context
+   (execution state of each thread; registers, PC, etc.)
+-- Thread context switch
+   (much quicker than process context switch)
+-- Scheduling algorithm
+   (which thread do we execute next?)
+-- Synchronization
+   (coordinating multiple threads in a predictable way)
+
+Threads do NOT have:
+-- their own file descriptors
+-- their own address space
+
+alarm-v2.c (multiple processes)
+-- need to handle zombie processes
+-- does not scale very well
+-- inefficient
+
+alarm-v3.c (multiple threads)
+-- use pthreads
+
+
+fork (multi-process model) vs pthreads
+-- fork() creates a duplicate of entire process memory space,
+    so local variables (seconds and msg) are fine (alarm-v2.c)
+-- pthreads share process memory space, so need to use malloc()
+    to ensure each thread has its own dedicated dynamically
+     allocated memory
+      (otherwise, synchronization problems occur, e.g.
+        corruption of data)
+
+-- using fork(), must call wait() or waitpid() for each child
+    process that terminates (otherwise, zombies!)
+-- using pthreads, no need to "wait" or poll for thread
+    termination (if pthread_detach() is used); alternatively,
+     we can use pthread_join()
+
+two-process or two-thread solution to the alarm problem?
+-- have two threads (or processes):
+   (1) handle user input
+   (2) wait for expiration of next alarm
+
+TO DO: create alarm system using only two processes and a pipe
+
+TO DO: create alarm system using only two threads
+
+questions: any reason to combine fork() with threads?
+ -- what happens to multiple threads if you call fork()?!
+
+disadvantages to threads:
+-- overhead (though less than fork() etc.)
+-- development complexity (worrying about thread-safe functions)
+-- debugging nightmares.....
+

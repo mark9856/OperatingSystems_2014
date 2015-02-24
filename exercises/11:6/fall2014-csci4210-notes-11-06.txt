@@ -1,0 +1,258 @@
+[11/06/2014]
+
+No office hours Mon 11/10 Tues 11/11 (Goldschmidt)
+
+Class Monday 11/10 with Simon again (virtual memory, etc.)
+
+==============================================================
+
+Homework #3
+
+To convert a char[] to an int/short
+
+    "8127" ==> 8127
+
+    atoi( argv[2] )
+
+if you wrote a client for testing, you could do:
+
+ bash$ ./client localhost 8127 < file.txt
+
+ file.txt:
+ "ADD xyz.txt 100\nwoiejfoweifjeowifjoewifewofijweofijwefoi..."
+
+ bash$ ./client
+ hard-coded in client send "ADD xyz.png 8992\n"
+
+     lstat( "xyz.png" )  <--- obtain the file size (e.g. 8992)
+
+     open( "xyz.png", O_RDONLY );
+     while ( more data to be read/processed )
+     {
+       char buffer[1000]
+       read()  <-- from the file
+       write() --> to the socket connection (to the server)
+     }
+     close()
+
+==============================================================
+Homework #3 synchronization
+
+bash$ man 2 flock
+
+semaphores
+-- special int variables
+-- the wait() and signal() operations must be atomic
+
+                    semaphore S = 1; 
+
+P(S)
+{
+   while ( S == 0 )
+   { /* busy wait */ }
+
+   S--;
+}
+
+V(S)
+{
+  S++;
+}
+
+a binary semaphore provides mutually exclusive
+ access to a shared resource
+ -- initialize semaphore S to 1
+ -- use wait() and signal() operations
+ -- possible values of S are 0 and 1
+
+
+
+P(S);
+  execCriticalSection();
+V(S);
+
+
+a counting semaphore controls access to
+ a finite number of resources
+ -- initialize semaphore S to n (n is the
+     number of resources to be shared)
+ -- use wait() and signal() operations
+
+
+pthreads:
+-- pthread_create()
+-- NEED for dynamic memory allocation before
+    calling thread code (for arguments passed to thread code)
+-- pthread_join()
+-- pthread_exit()
+-- pthread_detach()
+
+for mutual exclusion:
+
+/* global mutex variable */
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+pthread_mutex_lock( &mutex );
+  critical_section( );
+pthread_mutex_unlock( &mutex );
+
+
+
+Readers-Writers problem against a shared filesystem
+ (e.g. Homework #3) requires:
+
+-- Any number of readers and writers are allowed
+-- Readers can simultaneously read from the filesystem
+-- Only one writer can write to a specific file in
+    the filesystem at any given time  (individual mutex)
+-- If a writer is writing, no readers can read
+     from a specific file
+       while the write occurs  (group mutex)
+-- No starvation amongst readers and writers
+
+
+
+
+
+
+
+
+original problem:
+Readers-Writers problem against a shared database
+ (e.g. reservation system) requires:
+
+-- Any number of readers and writers are allowed
+-- Readers can simultaneously read from the database
+-- Only one writer can write to the database at any
+     given time  (INDIVIDUAL mutex)
+-- If a writer is writing, no readers can read while
+     the write occurs  (GROUP mutex)
+-- No starvation amongst readers and writers
+
+
+/* SHARED */
+int reader_count = 0;
+semaphore mutex_reader_count = 1;
+semaphore mutex_write = 1;
+
+/* WRITER */
+while ( true )
+{
+  non_critical_section_writer();
+  P( mutex_write );
+    write_operations();
+  V( mutex_write );
+}
+
+/* READER */
+while ( true )
+{
+  non_critical_section_reader();
+  P( mutex_reader_count );
+    reader_count++;
+    if ( reader_count == 1 )
+    {
+      P( mutex_write );  /* block any writers */
+    }
+  V( mutex_reader_count );
+
+  read_operations();
+
+  P( mutex_reader_count );
+    reader_count--;
+    if ( reader_count == 0 )
+    {
+      V( mutex_write );   /* allow writes */
+    }
+  V( mutex_reader_count );
+}
+
+PROBLEM with above: potential for starvation of writers
+ because readers have priority
+
+Alternative solutions:
+(1) give writers priority: if a process is waiting to
+     write, no reader is allowed to read.
+      But readers might starve (as long as writers are
+       writing, readers are blocked indefinitely)
+
+     (what does the "real" problem look like -- maybe
+      lots of reads and very few writes)
+
+(2) if a process is waiting to write, no new reader is
+     allowed to read.
+
+more long-winded description of (2):
+(2) If no writer is waiting to write, any reader that
+     wants to read is allowed to read.  As soon as a
+      writer wants to write, no new readers are allowed
+       to read. As soon as existing readers are done
+        reading, the write(s) can occur.
+    Once the writer is done, the blocked readers do
+     their read operations
+
+(3) Scheme with n readers allowed, then m writers allowed,
+     then REPEAT
+
+said another way:
+(3) If multiple writers want to write, it's necessary
+     to enforce queue or alternation between readers and
+      writers to avoid starvation
+
+===========================================================
+
+Contiguous Memory Allocation
+-- a process is loaded into physical memory
+    in one contiguous chunk
+
+-- two partitioning schemes:
+
+   fixed partitioning
+   -- the size of partitions (to hold processes)
+       is fixed
+   -- sizes can vary
+   -- if a process does not entirely fit into
+       a fixed partition, the extra/unused space
+        is INTERNAL FRAGMENTATION
+
+   -- process placement algorithm: choose the fixed
+       partition that "best fits" the given process
+        size; i.e. minimize internal fragmentation
+
+   dynamic partitioning
+   -- when a new process enters the system,
+       the process is allocated to a single contiguous
+        block out of one of the free partitions that
+	 are available
+   -- the OS maintains a list of allocated partitions
+       and free partitions
+
+   -- how do we place new process P in memory?
+
+   -- First-Fit algorithm: allocate the first free block
+       that's large enough to accommodate P
+        starting from the top of memory
+
+   -- Next-Fit algorithm: same as First-Fit algorithm, but
+       we start after the last-allocated process
+
+   -- Best-Fit algorithm: allocate the SMALLEST free block
+       that's large enough to accommodate P
+
+   -- Worst-Fit algorithm: allocate the LARGEST free block
+       that's large enough to accommodate P
+
+Memory not used by a process is considered fragmentation
+-- internal fragmentation is unused memory
+    within a defined partition
+-- external fragmentation is unused memory
+    in a dynamic allocation scheme
+
+Total memory space exists to satisfy a memory request,
+ but the memory is not contiguous,
+   so therefore, the process is NOT allocated   )-:
+
+Reduce external fragmentation by compaction or defragmentation
+-- Compaction is possible only if relocation is dynamic
+-- Compaction is done at execution time
+-- Compaction is expensive

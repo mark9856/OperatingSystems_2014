@@ -1,0 +1,49 @@
+[10/30/2014]
+
+Open Systems Interconnection (OSI) Reference Model
+
+The ISO proposal for the standardization of
+ various protocols in computer networks
+
+A seven-layer protocol stack
+
+ Application
+ (Presentation)
+ (Session)
+ Transport  (TCP, UDP)
+ Network    (IP)
+ (Data Link)
+ Physical
+
+Each layer on the client side is logically
+ communicating with the same layer on the
+  server side
+
+==========================================
+SERVER TYPES:
+
+(1) Iterative server -- server receives a
+    connection or datagram/packet, handles
+    that connection/datagram/request, then
+    accepts the next one, etc. (single thread)
+
+(2) fork()-based server -- a child process is
+    created for each client connection (server.c)
+
+(3) fork()-based server with pre-forked processes
+    (e.g. Apache); with a dynamic number of child
+    processes that changes based on traffic/demand
+
+(4) thread-based server -- a child thread is
+    created for each client connection (Homework #3)
+    (MultiThreadServer.java)
+
+(5) thread-based server with pre-generated threads
+    (i.e. thread pool) (Homework #3?)
+
+(6) A select-based server -- a single process
+    that is able to poll multiple descriptors
+    to check for activity (socket/file/pipe)
+    -- no need for multiple processes or multiple
+       threads!
+ 

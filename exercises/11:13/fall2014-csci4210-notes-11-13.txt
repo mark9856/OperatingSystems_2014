@@ -1,0 +1,306 @@
+[11/13/2014]
+
+Homework #3
+-- grading criteria posted
+
+-- strcpy()
+-- memcpy()
+-- avoid strlen() for binary files
+
+    "woeifjweofijweofijweoifj\0"
+                             ^^
+                            indicates end of string
+
+   but for binary files, the '\0' character
+    might be part of the data
+
+-- read()/recv()/write()/send() all return the
+   number of bytes successfully read/written
+-- you may assume that you will successfully send/recv
+   the specified number of bytes in the application-level
+    protocol
+
+-- do not assume a file size maximum; your server
+    should be able to handle a file of any size
+
+   #define BUFFER_SIZE 1024
+   char buffer[BUFFER_SIZE];   /* char here really means
+                                    one byte */
+   while ( nbytes < expected_nbytes )
+   {
+     n = read() up to BUFFER_SIZE bytes into buffer
+     nbytes += n;
+     process those bytes (write them to file)
+   }
+
+-- you only need to implement/submit server code
+   (do NOT submit any client test code)
+-- use telnet and/or netcat (nc) to test client side
+
+
+bash$ telnet localhost 8128
+
+>ADD filename.txt 27
+>abcdefghijklmnopqrstuvwxyz
+>
+
+
+
+-- from client.c (10/30 notes):
+
+   char * msg = "ADD test.txt 5\nABCDE";
+                               ^^
+                          this is one char (byte) '\n'
+
+   char * msg = "ADD binary.dat 5\nAB\0DE";
+                                     ^^
+                          this is one char (byte) '\0'
+
+
+int port = atoi(argv[2]);  /* "8128" */
+
+=======================================================
+
+contiguous memory allocation:
+
+ OSOSOSOSOSOSOSOSOSOSOSOSOS
+ .....AAAAAAAAAAAAAAAAABBBB
+ BBBBBBBBBBBBBBBBBBBBCCCCCC
+ CCCCCCC................DDD
+ DDDDDDDDDDDDD........QQQQQ
+ QQ....FFFFFFFFFFFFFFFFFFFF
+ ..........................
+ ..........................
+ ..........................
+ ..........................
+
+new process HHHHHHH arrives (requires 7 frames)
+
+ OSOSOSOSOSOSOSOSOSOSOSOSOS
+ .....AAAAAAAAAAAAAAAAABBBB
+ BBBBBBBBBBBBBBBBBBBBCCCCCC
+ CCCCCCCHHHHHHH.........DDD  <-- first-fit algorithm
+ DDDDDDDDDDDDD........QQQQQ
+ QQ....FFFFFFFFFFFFFFFFFFFF
+ ..........................
+ ..........................
+ ..........................
+ ..........................
+
+ OSOSOSOSOSOSOSOSOSOSOSOSOS
+ .....AAAAAAAAAAAAAAAAABBBB
+ BBBBBBBBBBBBBBBBBBBBCCCCCC
+ CCCCCCC................DDD
+ DDDDDDDDDDDDDHHHHHHH.QQQQQ <-- best-fit algorithm
+ QQ....FFFFFFFFFFFFFFFFFFFF
+ ..........................
+ ..........................
+ ..........................
+ ..........................
+
+ OSOSOSOSOSOSOSOSOSOSOSOSOS
+ .....AAAAAAAAAAAAAAAAABBBB
+ BBBBBBBBBBBBBBBBBBBBCCCCCC
+ CCCCCCC................DDD
+ DDDDDDDDDDDDD........QQQQQ
+ QQ....FFFFFFFFFFFFFFFFFFFF
+ HHHHHHH................... <-- next-fit algorithm
+ ..........................     (assuming F was the
+ ..........................      last process allocated)
+ ..........................
+
+ OSOSOSOSOSOSOSOSOSOSOSOSOS
+ .....AAAAAAAAAAAAAAAAABBBB
+ BBBBBBBBBBBBBBBBBBBBCCCCCC
+ CCCCCCC................DDD
+ DDDDDDDDDDDDD........QQQQQ
+ QQ....FFFFFFFFFFFFFFFFFFFF
+ HHHHHHH................... <-- worst-fit algorithm
+ ..........................
+ ..........................
+ ..........................
+
+
+when defragmentation/compaction is required:
+
+ OSOSOSOSOSOSOSOSOSOSOSOSOS
+ AAAAAAAAAAAAAAAAABBBBBBBBB
+ BBBBBBBBBBBBBBBCCCCCCCCCCC
+ CCDDDDDDDDDDDDDDDDQQQQQQQF
+ FFFFFFFFFFFFFFFFFFFHHHHHHH
+ ..........................
+ ..........................
+ ..........................
+ ..........................
+ ..........................
+
+
+
+for noncontig option:
+
+ OSOSOSOSOSOSOSOSOSOSOSOSOS
+ HHHHHAAAAAAAAAAAAAAAAABBBB
+ BBBBBBBBBBBBBBBBBBBBCCCCCC
+ CCCCCCCHH..............DDD
+ DDDDDDDDDDDDD........QQQQQ
+ QQ....FFFFFFFFFFFFFFFFFFFF
+ ..........................
+ ..........................
+ ..........................
+ ..........................
+
+
+                     p    |     d (offset)
+ logical address: 01100110|1111101010101001010101011 
+                          |
+                    |              |
+                    |              |
+                    V              |
+                                   |
+		   0x66            |
+		   102             |
+           (page table lookup)     |
+                    |              |
+                    |              |
+                    V              V
+                     f    |    d (offset)
+physical address: 11111111|1111101010101001010101011 
+                          |
+
+   so the 11111111 is just an example (i.e. it's
+    whatever frame number is in the page table)
+
+
+Using a noncontiguous memory allocation scheme,
+ consider a physical memory size of 2GB
+
+-- how many bits are required to represent a memory address?
+
+             31
+   31 bits; 2   = 2GB
+
+-- of the number of required bits (31), the high-order 14
+    bits represent the page number; the remaining low-order
+     bits (17) represent the page offset
+
+                 |
+   10101010101010|10101010101010101
+                 |
+
+-- how many frames (physical memory) are there?
+
+     14
+    2   frames of physical memory = 16,384
+
+-- frame and page sizes will be the same
+
+-- what is the frame (and page) size?
+
+     17
+    2   = 131,072 bytes
+
+-- given a process of size X, how many pages do we have?
+    how many frames do we require from physical memory?
+
+
+
+The page table resides in main memory
+-- every memory access actually then requires
+    two memory accesses (the first being for
+     the page table lookup)
+
+Given: memory access time is 100 nanoseconds
+Actual memory access (given the page table lookup)
+ will take 200 nanoseconds
+
+Use page table caching at the hardware level to
+ speed up address translation
+ -- do this via a translation lookaside buffer (TLB)
+
+Given: memory access time is 100 nanoseconds
+Given: TLB access time is 20 nanoseconds
+Given: TLB hit ratio is 80%
+       (80% of the time, we have a TLB/cache hit)
+
+
+The effective memory access time (EMAT)
+
+EMAT = 0.80 x (20 + 100)  +  0.20 x (20 + 100 + 100)
+
+     = 0.80 x 120  +  0.20 x 220
+
+     = 140 ns
+
+
+to do: use a TLB hit ratio of 95%.  how about 5%
+
+
+
+For large page tables, use multiple page table levels
+
+      p1   |   p2   |  d (offset)
+   10101010|10101010|101010101010101
+           |        |        
+=====================================================
+
+Virtual memory
+-- only part of a process needs to be loaded
+    into memory for it to start its execution
+-- Unused pages (all pages) are stored on disk
+-- Logical/virtual address space can be larger
+    than physical address space
+-- Allows physical address space to be shared
+    by several processes (e.g. libraries)
+
+When a page of memory is requested,
+ if it's not in physical memory, load page from disk  )-:
+i.e. Demand Paging
+
+Virtual memory policies are:
+-- the FETCH policy governs when a page should be
+    loaded into memory (e.g. demand paging, 
+     demand paging with surrounding pages also loaded)
+-- the PLACEMENT policy specifies where a page
+    is loaded into physical memory (use page table)
+-- the REPLACEMENT policy determines which
+    existing page (already in memory) should
+     be replaced
+
+   e.g. a process is allocated to 3 frames of physical memory;
+    if the frames have pages 12, 15, 24 already loaded into
+     physical memory and a page access occurs for page 30,
+      the OS needs to pick the "victim" page from 12, 15, 24
+
+
+Page allocation:
+
+-- in a STATIC ALLOCATION scheme, the
+    number of frames per process is fixed
+-- in a DYNAMIC ALLOCATION scheme, the
+    number of frames per process can vary
+
+-- in an EQUAL ALLOCATION scheme, all processes
+    have an equal number of frames
+-- in a PROPORTIONAL ALLOCATION scheme, processes
+    are allocated frames in proportion to size,
+     priority, etc.
+
+Associate a valid/invalid bit with each page table entry
+-- initially, all entries are set to i (invalid)
+-- during address translation, if valid/invalid bit is v,
+    page is already in memory
+-- Otherwise (invalid), a PAGE FAULT occurs
+
+Page fault recovery:
+-- get a free frame from physical memory
+-- (maybe/likely) determine the "victim" page to replace;
+   save that back to disk if necessary
+-- load the desired/requested page into free frame
+-- reset the page table entry
+-- set the valid/invalid bit to v
+-- restart the instruction that caused the page fault
+
+
+
+
+

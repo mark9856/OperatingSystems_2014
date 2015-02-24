@@ -1,0 +1,54 @@
+[10/06/2014]
+
+Find teammates for OpSys Homework #2 on the
+ Facebook Computer Science page
+
+Nidhi and Boliang are going to start grading
+ Homework #1 today
+
+Homework #2
+to be posted:
+-- grading criteria
+-- more sample (expected) output
+
+context switch times are included in
+ turnaround time, but not included in
+  wait time
+
+====================================================
+Midterm Exam is Thursday 10/9 in class 2:00-3:45PM
+
+-- in class (so 1 hour and 45 minutes)
+-- four equally weighted problems with multiple parts
+   (for CSCI-6140 students, extra part(s) for question(s)?)
+-- one 8.5"x11" double-side crib sheet allowed
+    (or two single-sided sheets)
+
+Exam coverage:
+-- two-and-a-half problems focus on C/Linux systems
+    programming
+-- one-and-a-half problems focus on short term
+    CPU scheduling (algorithms)
+
+Types of questions:
+-- What is the EXACT output of the given code
+    (describe all possible outcomes using a diagram)
+     ...includes stdout, stderr, file output
+-- What happen(s) when line(s) are commented out
+    or added...?
+-- What is the turnaround and wait times for the
+    given processes based on specific scheduling
+     algorithms?
+-- Show that scheduling algorithm x is better than y
+
+Sample exam questions are posted
+
+NOT ON THE EXAM:
+-- Java
+-- threads
+-- synchronization issues etc.
+
+======================================================
+
+
+

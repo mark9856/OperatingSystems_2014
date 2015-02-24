@@ -1,0 +1,232 @@
+[09/22/2014]
+
+Homework #1 Clarifications
+
+For the pipe functionality:
+
+ "ps -ef | grep cutler"
+
+ PARENT
+ +-----------+
+ | shell.... |       CHILD #1 (PARENT)
+ |           |       +-------------+
+ |    fork() |======>|             |     CHILD #2
+ |    wait() |       | pipe()      |     +-----------+
+ |           |       |     fork()  |====>|           |
+ +-----------+       |             |     | exec("ps")|
+                     | exec("grep")|     |           |
+                     |             |     +-----------+
+                     +-------------+
+
+                      (the pipe is written to by
+                       child #2; read by child #1)
+
+
+...after grep and ps processes terminate:
+
+ PARENT
+ +-----------+
+ | shell.... |
+ |           |
+ |    fork() |                           CHILD #2
+ |    wait() |                           +-----------+
+ |           |                           |           |
+ +-----------+                           | exec("ps")|
+                                         |           |
+                                         +-----------+
+                      (CHILD #2 is adopted by pid 1,
+                       which terminates zombies)
+
+
+
+
+passing 2-d array by reference???
+
+ void func( char x[1000][1000] );
+
+ main()
+ {
+   char history[1000][1000];
+   func( history )
+
+   ...
+ }
+
+===================================================
+
+CPU SCHEDULING
+(a.k.a. SHORT-TERM SCHEDULING)
+
+-- long-term scheduling: algorithm to select
+    next job to be admitted to the system
+
+-- job (a batch job waiting to enter the system)
+-- process (a program in execution already in system)
+
+Multiprogramming -- multiple processes residing
+ in memory at once (requires CONTEXT SWITCHING)
+
+Processes both COMPETE for resources
+ (multiple process are in READY state)
+  and often must COOPERATE with on another
+   (IPC, Synchronization)
+
+Given: n processes in READY state (in memory)
+Assume: 1 CPU available
+Algorithm: select next process to execute with CPU
+
+does it matter (since computers are sooooo fast)?
+-- on laptops/PCs, the "in-focus" app is the best
+    candidate to execute next (e.g. text editor)
+-- on (busy) servers, it matters....
+
+why does it matter?
+-- to support multiprogramming, we need context switches
+   (which is costly overhead, including switch from
+    user mode to kernel mode)
+-- aim to make most efficient use of CPU
+-- aim to achieve FAIRNESS amongst all processes,
+    though also support process priorities
+
+CPU-bound and I/O-bound processes
+-- Processes use the CPU in "bursts"
+-- CPU runs a process until the process performs
+    a system call requesting I/O
+-- CPU-bound processes spend most of their time
+    using CPU -- longer CPU burst times
+-- I/O-bound processes spend most of their time
+    waiting for I/O -- shorter CPU burst times
+-- as CPUs get even faster, processes tend to be
+    more I/O-bound, because CPUs are faster than
+     disk, etc.
+
+Preemption vs Nonpreemption
+-- A nonpreemptive scheduling algorithm selects a
+    process and allows it to run until the process
+     "decides" to relinquish control of CPU
+      (i.e. after it's executed its CPU burst)
+-- A preemptive scheduling algorithm selects a
+    process and allows it only to run at most some
+     fixed timeslice (based on clock interrupt)
+      or will preempt it (kick it out of the CPU)
+       for some other reason
+
+Process mix:
+-- batch or cron processes (running in background)
+-- interactive processes (requires preemption)
+-- real-time processes (often designed to have
+    shorter CPU bursts)
+
+Given: n processes in READY state (in memory)
+Assume: 1 CPU available
+Algorithm: select next process to execute with CPU
+
+CPU scheduling algorithm goals:
+-- fairness (each process has fair share of CPU time)
+-- balance (keep all system components busy, often
+   with a mix of CPU and I/O-bound processes)
+-- throughput (maximize batch jobs completed per
+                 unit time)
+-- turnaround time
+    (minimize time between process entering READY state
+      to completing its CPU burst time)
+-- wait time
+    (minimize time process is waiting in READY queue)
+-- CPU utilization (maximize CPU usage)
+-- response time (respond to user requests quickly)
+-- real-time response time (meet deadlines)
+
+
+Scheduling algorithms (for batch systems):
+-- First-Come First-Served (FCFS)
+-- Shortest Job First (SJF)
+-- Shortest Remaining Time (SRT) (SRTN <-- Next)
+
+FCFS
+-- nonpreemptive
+-- simplest to understand, implement, etc.
+-- not very efficient
+-- causes long delays for processes toward the end
+    of the queue, especially with CPU-bound processes
+     leading the way
+
+SJF
+-- nonpreemptive
+-- assumes that runtimes are known in advance....
+-- SJF is provably optimal in terms of turnaround time
+
+given: n jobs with required CPU times
+-- first job finishes at time A
+-- second job finishes at time A+B
+-- third job finishes at time A+B+C
+-- etc.
+                          (4A + 3B + 2C + D)
+-- mean turnaround time = ------------------
+                                  4
+
+-- intuitively, A contributes much more to the mean
+                 than D
+
+-- disadvantages: assumes all jobs available at time 0
+-- disadvantages: cannot typically know runtimes
+                   ahead of time
+
+SRT
+-- preemptive SJF
+-- when a new job arrives, its required time is
+    compared to remaining time of running process;
+     if new job requires less time, preemption occurs
+
+
+
+
+
+Scheduling algorithms (for interactive systems):
+-- Round-Robin (RR)
+-- Priority
+-- Shortest Process Next (SPN)
+
+Round-Robin (RR)
+-- preemptive (based on fixed timeslice or quantum)
+-- preemption occurs when timeslice expires
+-- processes might opt to relinquish control of CPU
+    sooner (before timeslice expiration)
+-- simple, fair, most widely used
+
+-- how to choose length of timeslice?
+
+   select timeslice to be much more than context
+    switch time (e.g. 100ms vs 1ms gives 1% overhead)
+
+   e.g. 100ms timeslice; 50 processes in READY state;
+    last process could wait 50x100ms=5000ms=5sec for CPU
+   
+   if timeslice is longer than mean CPU burst,
+    preemption will not happen all that often;
+     instead, allow process to relinquish control
+      of CPU
+   
+      this is better, because context switches occur
+       only when logically necessary
+   
+   if timeslice too short, too many context switches
+    and therefore reduced CPU efficiency
+   
+   if timeslice too long, poor response times to
+    short CPU burst requests
+
+Priority Scheduling
+-- use round-robin for each priority level
+-- problem: starvation of lower-priority processes
+   (solution: aging; increase priority automatically
+    as process ages in ready queues)
+-- preemptive? if so, when a higher-priority process
+    arrives, preempt the running lower-priority process
+
+
+Shortest Process Next (SPN)
+-- use SJF, but difficult to predict CPU burst times
+    for the processes in the READY state
+
+-- predict CPU burst times based on history
+

@@ -1,0 +1,46 @@
+[09/15/2014]
+
+Homework #1 due by 11:59pm on 9/24 via LMS
+-- if you do NOT see the LMS course,
+    please email me to remedy this
+
+For exec() system calls, use any that you like...
+-- but do not use or rely on $PATH
+-- use $MYPATH instead
+-- I'd suggest parsing the $MYPATH env variable,
+   and using lstat() to see if the command exists
+    (and is executable) ... see stat.c
+
+you can define this in bash shell:
+bash$ export MYPATH=/usr/local/bin:/usr/bin:/bin:.
+bash$ ./a.out
+
+When you first start your shell, get the $MYPATH
+ environment variable and just use it
+ -- no need to support users changing this in
+     your shell
+
+e.g. if the user enters "ls -al"
+
+    lstat( "/usr/local/bin/ls", ...
+    lstat( "/usr/bin/ls", ...
+    lstat( "/bin/ls", ...
+    lstat( "./ls", ....
+
+  IMPORTANT: check the return code for lstat()
+
+
+OK:
+gcc ... -std=C99 ...
+
+ for ( int i = 0 ; i < n ; i++ )
+
+
+
+if we redirect stdout to another descriptor
+ (e.g. file or a pipe), to "restore" stdout,
+  copy stdout in the first place via dup2() to
+   some other descriptor, then copy it back...
+
+
+
